@@ -1,0 +1,1 @@
+Read me is pending, i spent the morning reinstalling all of WSL + python, tensorflow, magenta, BUT i did get a solid like process down to run everything locally that should be relatively painless for yall in WSL2 which is also pending ;-;
