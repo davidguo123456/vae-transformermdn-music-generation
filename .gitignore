@@ -1,0 +1,9 @@
+# Build and Release Folders
+__pycache__/
+
+# Executables
+*.mid
+*.midi
+*.tfrecord*
+*.tar*
+
