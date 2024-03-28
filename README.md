@@ -39,7 +39,7 @@ echo 'export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:$LD_LIBRARY_PATH' >> ~/.
 source ~/.bashrc
 sudo ldconfig
 ```
-Now download cuDNN Library for Linux (x86_64) from https://developer.nvidia.com/rdp/cudnn-archive
+Now download cuDNN v8.1.1: 'cuDNN Library for Linux (x86_64)' from https://developer.nvidia.com/rdp/cudnn-archive
 Place .tar in \\wsl.localhost\Ubuntu-20.04\home\yournamefromsetup
 In wsl:
 ```
@@ -54,7 +54,7 @@ sudo chmod a+r /usr/local/cuda-11.2/lib64/libcudnn*
 nvidia-smi
 nvcc -V
 ```
-Cuda and CUDNN are now installed
+Cuda and cuDNN are now installed
 To install dependencies:
 ```
 #check to ensure version is 3.8.10
