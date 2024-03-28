@@ -40,7 +40,7 @@ source ~/.bashrc
 sudo ldconfig
 ```
 Now download cuDNN Library for Linux (x86_64) from https://developer.nvidia.com/rdp/cudnn-archive
-Place .tar in \\wsl.localhost\Ubuntu-20.04\home\<yournamefromsetup>
+Place .tar in \\wsl.localhost\Ubuntu-20.04\home\yournamefromsetup
 In wsl:
 ```
 CUDNN_TAR_FILE="cudnn-11.2-linux-x64-v8.1.1.33.tgz"
