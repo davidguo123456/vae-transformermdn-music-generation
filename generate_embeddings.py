@@ -43,7 +43,7 @@ class Encode_Song(beam.DoFn):
         """
         Loads the pre-trained model during setup.
         """
-        self.cutoff_time = 70 # ns longer than this will be shortened
+        self.cutoff_time = 60 # ns longer than this will be shortened
         self.minimum_time = 60 # minimum length for ns to be processed
         logging.info('Loading pre-trained model')
         self.model_config = config.MUSIC_VAE_CONFIG['melody-2-big']
@@ -120,7 +120,7 @@ def encode_ns(input_path, output_path):
 class Mask_Song(beam.DoFn):
     """
     A Beam DoFn for masking music sequences. 
-    Notes between second 15 and 45 are masked
+    Notes between second self.start_time and self.end_time are masked
     
     Attributes:
         None
@@ -135,7 +135,6 @@ class Mask_Song(beam.DoFn):
         Initalizing values for masking.
         """
         logging.info('Intializing masking values')
-        self.minimum_time = 60 # minimum length for ns to be processed
         self.start_time = 15 # start time of mask
         self.end_time = 45 # end time of mask
     
@@ -148,24 +147,25 @@ class Mask_Song(beam.DoFn):
         Yields:
             note_seq.NoteSequence: Processed music sequence.
 
-        This method masks notes between the 15th and 45th second for sequences
-        longer than 60 seconds. Shorter sequences are skipped, longer sequences a shortened to 60 seconds
+        This method masks notes between self.start_time and self.end_time.
         """
-        print('Masking %s::%s (%f)' % (ns.id, ns.filename, ns.total_time))
-
+        print('Masking %s::%s (%f), with %s notes.' % (ns.id, ns.filename, ns.total_time, len(ns.notes)))
+        assert(self.end_time > self.start_time)
         ns_mask = music_pb2.NoteSequence()
         ns_mask.CopyFrom(ns)
 
         del ns_mask.notes[:]
-        for note in ns_mask.notes:
-            if (note.end_time >= self.start_time and note.end_time <= self.end_time) or (note.start_time >= self.start_time and note.start_time <= self.end_time):
-                continue
-            new_note = ns_mask.notes.add()
-            new_note.CopyFrom(note)
-            new_note.end_time = note.end_time
+        for note in ns.notes:
+            if (note.end_time <= self.start_time):
+                new_note = ns_mask.notes.add()
+                new_note.CopyFrom(note)
+                new_note.end_time = min(self.start_time, note.end_time)
+            elif (note.end_time > self.end_time):
+                new_note = ns_mask.notes.add()
+                new_note.CopyFrom(note)
+                new_note.start_time = max(self.end_time, note.start_time)
 
         ns_mask.total_time = ns_mask.total_time
-
         yield ns_mask
 
 def mask_ns(input_path, output_path):
