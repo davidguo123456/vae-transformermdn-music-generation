@@ -15,6 +15,7 @@ import note_seq
 from note_seq import trim_note_sequence
 import song_utils
 import glob
+from note_seq.protobuf import music_pb2
 
 
 class Encode_Song(beam.DoFn):
@@ -42,7 +43,7 @@ class Encode_Song(beam.DoFn):
         """
         Loads the pre-trained model during setup.
         """
-        self.cutoff_time = 60 # ns longer than this will be shortened
+        self.cutoff_time = 70 # ns longer than this will be shortened
         self.minimum_time = 60 # minimum length for ns to be processed
         logging.info('Loading pre-trained model')
         self.model_config = config.MUSIC_VAE_CONFIG['melody-2-big']
@@ -63,11 +64,6 @@ class Encode_Song(beam.DoFn):
         This method processes a single music sequence with length >= 60 and length < 300
         """
         print('Processing %s::%s (%f)' % (ns.id, ns.filename, ns.total_time))
-        if ns.total_time > 60 * 5:
-            logging.info('Skipping notesequence with >5 minute duration.')
-            Metrics.counter('EncodeSong', 'skipped_long_song').inc()
-            return
-        
         if ns.total_time < self.minimum_time:
             logging.info('Skipping notesequence with <1 minute duration.')
             Metrics.counter('EncodeSong', 'skipped_short_song').inc()
@@ -124,8 +120,7 @@ def encode_ns(input_path, output_path):
 class Mask_Song(beam.DoFn):
     """
     A Beam DoFn for masking music sequences. 
-    Songs with length < 60 are skipped, songs with length > 60 are shortened to 60.
-    notes between second 15 and 45 are masked
+    Notes between second 15 and 45 are masked
     
     Attributes:
         None
@@ -157,20 +152,21 @@ class Mask_Song(beam.DoFn):
         longer than 60 seconds. Shorter sequences are skipped, longer sequences a shortened to 60 seconds
         """
         print('Masking %s::%s (%f)' % (ns.id, ns.filename, ns.total_time))
-        if ns.total_time > 60 * 5:
-            logging.info('Skipping notesequence with >5 minute duration.')
-            Metrics.counter('EncodeSong', 'skipped_long_song').inc()
-            return
-        
-        if ns.total_time < self.minimum_time:
-            logging.info('Skipping %s::%s (%f)', ns.id, ns.filename, ns.total_time)
-            Metrics.counter('MaskSong', 'skipped_short_song').inc()
-            return  # Skip processing for songs less than 60 seconds
-        
-        for note in ns.notes:
-            if note.start_time >= self.start_time and note.start_time <= self.end_time:
-                note.instrument = 0  # Mute the note by setting instrument to 0
-        yield ns
+
+        ns_mask = music_pb2.NoteSequence()
+        ns_mask.CopyFrom(ns)
+
+        del ns_mask.notes[:]
+        for note in ns_mask.notes:
+            if (note.end_time >= self.start_time and note.end_time <= self.end_time) or (note.start_time >= self.start_time and note.start_time <= self.end_time):
+                continue
+            new_note = ns_mask.notes.add()
+            new_note.CopyFrom(note)
+            new_note.end_time = note.end_time
+
+        ns_mask.total_time = ns_mask.total_time
+
+        yield ns_mask
 
 def mask_ns(input_path, output_path):
     """
@@ -230,7 +226,7 @@ def _serialize_tf_shard(shard, output_path):
     logging.info('Saved to %s', output_path)
 
 def save_shard(contexts, targets, output_path):
-
+    print('saving a shard to:' + output_path)
     context_shard = contexts[:(2**17)]
     target_shard = targets[:(2**17)]
     context_shard = np.stack(context_shard).astype(np.float32)
@@ -249,6 +245,7 @@ def save_shard(contexts, targets, output_path):
     return contexts, targets
 
 def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=32, stride=1):
+    print(train_input_path, test_input_path, output_path)
     train_files = glob.glob(os.path.expanduser(train_input_path))
     test_files = glob.glob(os.path.expanduser(test_input_path))
 
@@ -258,11 +255,11 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=32
             lambda binary: pickle.loads(binary.numpy()), [x], tensor_shape),
                         num_parallel_calls=tf.data.experimental.AUTOTUNE)
     test_dataset = tf.data.TFRecordDataset(
-    test_files).map(lambda x: tf.py_function(
-            lambda binary: pickle.loads(binary.numpy()), [x], tensor_shape),
-                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    
+        test_files).map(lambda x: tf.py_function(
+                lambda binary: pickle.loads(binary.numpy()), [x], tensor_shape),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE)
     for ds, split in [(train_dataset, 'train'), (test_dataset, 'test')]:
+        print(split)
         output_fp = '{}/{}-{:04d}'
         contexts, targets = [], []
         count = 0
@@ -274,21 +271,23 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=32
 
             # Use the full VAE embedding
             song = song_embeddings[0]
-            for i in range(0, len(song) - ctx_window, stride):
-              context = song[i:i + ctx_window]
-              if np.where(
-                  np.linalg.norm(context, axis=1) < 1e-6)[0].any():
-                continue
-              example_count += 1
-              contexts.append(context)
-              targets.append(song[i + ctx_window])
-
-            if len(targets) >= 2**17:
+            # pad short sequences
+            pad_width = ((0, ctx_window + 1 - len(song)),) + ((0, 0),) * (song.ndim - 1)
+            pad_width = tuple(tuple(max(0,x) for x in inner) for inner in pad_width)
+            song = np.pad(song, pad_width, mode='constant')
+            context = song[:ctx_window]
+            #if np.where(np.linalg.norm(context, axis=1) < 1e-6)[0].any():
+            #    continue
+            example_count += 1
+            contexts.append(context)
+            targets.append(song[ctx_window])
+            if example_count % 1000 == 0: print(example_count)
+            if len(targets) > 2**17:
                 contexts, targets = save_shard(
                     contexts, targets, output_fp.format(output_path, split,
                                                         count))
                 count += 1
-
+        
         logging.info(f'Discarded {discard} invalid sequences.')
         if len(targets) > 0:
             save_shard(contexts, targets,
