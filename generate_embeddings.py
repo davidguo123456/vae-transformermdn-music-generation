@@ -13,7 +13,7 @@ import apache_beam as beam
 from apache_beam.metrics import Metrics
 import note_seq
 from note_seq import trim_note_sequence
-import song_utils
+import utils.song_utils
 import glob
 from note_seq.protobuf import music_pb2
 
