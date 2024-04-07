@@ -244,7 +244,7 @@ def save_shard(contexts, targets, output_path):
 
     return contexts, targets
 
-def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=32, stride=1):
+def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=8, stride=1):
     print(train_input_path, test_input_path, output_path)
     train_files = glob.glob(os.path.expanduser(train_input_path))
     test_files = glob.glob(os.path.expanduser(test_input_path))
@@ -271,16 +271,28 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=32
 
             # Use the full VAE embedding
             song = song_embeddings[0]
+            print(np.shape(song))
             # pad short sequences
-            pad_width = ((0, ctx_window + 1 - len(song)),) + ((0, 0),) * (song.ndim - 1)
-            pad_width = tuple(tuple(max(0,x) for x in inner) for inner in pad_width)
-            song = np.pad(song, pad_width, mode='constant')
-            context = song[:ctx_window]
-            #if np.where(np.linalg.norm(context, axis=1) < 1e-6)[0].any():
-            #    continue
-            example_count += 1
-            contexts.append(context)
-            targets.append(song[ctx_window])
+
+            #pad back
+            #pad_width = ((0, ctx_window + 1 - len(song)),) + ((0, 0),) * (song.ndim - 1)
+            #pad_width = tuple(tuple(max(0,x) for x in inner) for inner in pad_width)
+            #song = np.pad(song, pad_width, mode='constant')
+
+            #pad front
+            #context = song[:ctx_window]
+            #example_count += 1
+            #contexts.append(context)
+            #targets.append(song[ctx_window])
+
+            #adjusted embedding size
+            if len(song) >= 9:
+                for i in range(0, len(song) - ctx_window, stride):
+                    context = song[i:i + ctx_window]
+                    example_count += 1
+                    contexts.append(context)
+                    targets.append(song[i + ctx_window])
+
             if example_count % 1000 == 0: print(example_count)
             if len(targets) > 2**17:
                 contexts, targets = save_shard(
