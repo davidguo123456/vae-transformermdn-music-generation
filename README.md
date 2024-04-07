@@ -75,6 +75,9 @@ pip install -U Jinja2==3.1.2
 pip install -U protobuf==3.20.3
 pip install -U tensorflow-metadata==1.13.0
 pip install -U MarkupSafe==2.1.1
+pip install jax==0.2.8
+pip install --upgrade jax==0.2.8 jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+pip install flax==0.3.0
 
 #check tensorflow install, this should show your GPU(s)
 python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
