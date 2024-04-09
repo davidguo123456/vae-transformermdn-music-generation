@@ -1,7 +1,3 @@
-embeddings are pending ;-; 
-
-Read me is pending, i spent the morning reinstalling all of WSL + python, tensorflow, magenta.
-
 Process to install and run on WSL2:
 
 Windows 10 must be build 20145 or later.
@@ -75,9 +71,14 @@ pip install -U Jinja2==3.1.2
 pip install -U protobuf==3.20.3
 pip install -U tensorflow-metadata==1.13.0
 pip install -U MarkupSafe==2.1.1
-pip install jax==0.2.8
-pip install --upgrade jax==0.2.8 jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-pip install flax==0.3.0
+pip install -U jax==0.2.8
+pip install -U jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+pip install -U flax==0.3.0
+pip install -U ray==1.1.0
+pip install -U aiohttp==3.6.2
+pip install -U redis==3.5.3
+pip install -U aiohttp-cors==0.7.0
+pip install -U aioredis===1.3.1
 
 #check tensorflow install, this should show your GPU(s)
 python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
