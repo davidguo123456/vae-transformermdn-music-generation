@@ -6,4 +6,6 @@ __pycache__/
 *.midi
 *.tfrecord*
 *.tar*
-
+*.pkl
+*.tfevent*
+*.7z

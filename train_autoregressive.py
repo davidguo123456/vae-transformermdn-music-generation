@@ -196,7 +196,7 @@ def train_step(batch, optimizer, learning_rate):
     optimizer = optimizer.apply_gradient(grad, learning_rate=learning_rate)
     return optimizer, train_metrics
 
-def train(train_batches, valid_batches, output_dir=None, verbose=True):
+def train(train_batches, valid_batches, output_dir=None, verbose=True, resume_training=True):
     """Training loop.
 
     Args:
@@ -232,6 +232,10 @@ def train(train_batches, valid_batches, output_dir=None, verbose=True):
                         verbose=verbose)
     optimizer = create_optimizer(model, FLAGS.learning_rate)
     early_stop = train_utils.EarlyStopping(patience=1)
+    if resume_training:
+        optimizer, early_stop = checkpoints.restore_checkpoint(
+            os.path.join( FLAGS.model_dir, 'saved_checkpoints'), (optimizer, early_stop)
+        )
 
     # Learning rate schedule
     lr_step_schedule = [(i, FLAGS.lr_gamma**i) for i in range(1000)]
