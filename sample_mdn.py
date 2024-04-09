@@ -50,7 +50,7 @@ flags.DEFINE_string("sampling_dir", "sample", "Sampling directory.")
 flags.DEFINE_integer("sample_size", 100, "Number of samples.")
 flags.DEFINE_boolean("flush", True, "Flush generated samples to disk.")
 
-def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None):
+def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None, mode='saved_checkpoints'):
     """Generate samples using autoregressive decoding.
 
     Args:
@@ -81,7 +81,7 @@ def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None)
 
     # Load learned parameters
     optimizer, early_stop = checkpoints.restore_checkpoint(
-        FLAGS.model_dir, (optimizer, early_stop)
+        os.path.join( FLAGS.model_dir, mode), (optimizer, early_stop)
     )
 
     # Autoregressive decoding
@@ -118,7 +118,7 @@ def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None)
     return tokens
 
 
-def sample_mdn(dataset):
+def sample_mdn(dataset, mode):
     FLAGS(('',''))
 
     logging.info(FLAGS.flags_into_string())
@@ -162,7 +162,7 @@ def sample_mdn(dataset):
     shape = real[0].shape
 
     # Generate samples
-    generated = sample(FLAGS.sample_size, shape[-2], shape[-1], FLAGS.sample_seed, real)
+    generated = sample(FLAGS.sample_size, shape[-2], shape[-1], FLAGS.sample_seed, real, mode=mode)
 
     # Dump generated to CPU.
     generated = np.array(generated)

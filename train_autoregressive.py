@@ -36,7 +36,7 @@ flags.DEFINE_integer('seed', 0, 'Random seed for network initialization.')
 # Training
 flags.DEFINE_float('learning_rate', 3e-4, 'Learning rate for optimizer.')
 flags.DEFINE_integer('batch_size', 32, 'Batch size for training.')
-flags.DEFINE_integer('epochs', 10, 'Number of training epochs.')
+flags.DEFINE_integer('epochs', 100, 'Number of training epochs.')
 flags.DEFINE_integer('max_steps', 100000, 'Maximum number of training steps.')
 
 # Training stability
@@ -71,7 +71,7 @@ flags.DEFINE_integer('snapshot_freq', 5000,
 flags.DEFINE_boolean('snapshot_sampling', True,
                      'Sample from score network during evaluation.')
 flags.DEFINE_integer('eval_samples', 3000, 'Number of samples to generate.')
-flags.DEFINE_integer('checkpoints_to_keep', 50,
+flags.DEFINE_integer('checkpoints_to_keep', 100,
                      'Number of checkpoints to keep.')
 flags.DEFINE_boolean('save_ckpt', True,
                      'Save model checkpoints at each evaluation step.')
@@ -196,7 +196,7 @@ def train_step(batch, optimizer, learning_rate):
     optimizer = optimizer.apply_gradient(grad, learning_rate=learning_rate)
     return optimizer, train_metrics
 
-def train(train_batches, valid_batches, output_dir=None, verbose=True, resume_training=True):
+def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=None, verbose=True, resume_training=True):
     """Training loop.
 
     Args:
@@ -234,7 +234,7 @@ def train(train_batches, valid_batches, output_dir=None, verbose=True, resume_tr
     early_stop = train_utils.EarlyStopping(patience=1)
     if resume_training:
         optimizer, early_stop = checkpoints.restore_checkpoint(
-            os.path.join( FLAGS.model_dir, 'saved_checkpoints'), (optimizer, early_stop)
+            os.path.join( FLAGS.model_dir, mode), (optimizer, early_stop)
         )
 
     # Learning rate schedule
@@ -302,7 +302,7 @@ def train(train_batches, valid_batches, output_dir=None, verbose=True, resume_tr
 
     return optimizer
 
-def train_autoregressive(dataset):
+def train_autoregressive(dataset, mode):
     FLAGS(('',''))
     logging.info(FLAGS.flags_into_string())
     logging.info('Platform: %s', jax.lib.xla_bridge.get_backend().platform)
@@ -332,4 +332,5 @@ def train_autoregressive(dataset):
     train(train_batches=train_ds,
             valid_batches=eval_ds,
             output_dir=FLAGS.model_dir,
-            verbose=FLAGS.verbose)
+            verbose=FLAGS.verbose,
+            mode=mode)

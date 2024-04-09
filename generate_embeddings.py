@@ -13,7 +13,7 @@ import apache_beam as beam
 from apache_beam.metrics import Metrics
 import note_seq
 from note_seq import trim_note_sequence
-import utils.song_utils
+import utils.song_utils as song_utils
 import glob
 from note_seq.protobuf import music_pb2
 
@@ -64,6 +64,7 @@ class Encode_Song(beam.DoFn):
         This method processes a single music sequence with length >= 60 and length < 300
         """
         print('Processing %s::%s (%f)' % (ns.id, ns.filename, ns.total_time))
+        print(ns.total_time)
         if ns.total_time < self.minimum_time:
             logging.info('Skipping notesequence with <1 minute duration.')
             Metrics.counter('EncodeSong', 'skipped_short_song').inc()
@@ -71,9 +72,11 @@ class Encode_Song(beam.DoFn):
         Metrics.counter('EncodeSong', 'encoding_song').inc()
         
         ns_trim = trim_note_sequence(ns, 0, self.cutoff_time)
+        del ns_trim.tempos[1:]
 
         chunk_length = 2
         melodies = song_utils.extract_melodies(ns_trim)
+        print(np.shape(melodies))
         if not melodies:
             Metrics.counter('EncodeSong', 'extracted_no_melodies').inc()
             return
@@ -85,6 +88,7 @@ class Encode_Song(beam.DoFn):
         encoding_matrices = song_utils.encode_songs(self.model, songs)
 
         for matrix in encoding_matrices:
+            print(np.shape(matrix))
             assert matrix.shape[0] == 3 and matrix.shape[-1] == 512
             if matrix.shape[1] == 0:
                 Metrics.counter('EncodeSong', 'skipped_matrix').inc()

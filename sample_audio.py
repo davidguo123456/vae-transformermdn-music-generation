@@ -49,7 +49,7 @@ SAMPLE_RATE = 44100
 flags.DEFINE_integer('eval_seed', 42, 'Random number generator seed.')
 flags.DEFINE_string('input', 'sample/mdn', 'Sampling (input) directory.')
 flags.DEFINE_string('output', './audio', 'Output directory.')
-flags.DEFINE_integer('n_synth', 1000, 'Number of samples to decode.')
+flags.DEFINE_integer('n_synth', 10, 'Number of samples to decode.')
 flags.DEFINE_boolean('include_wav', True, 'Include audio waveforms.')
 flags.DEFINE_boolean('include_plots', True, 'Include Bokeh plots of MIDI.')
 flags.DEFINE_boolean('gen_only', False, 'Only generate the fake audio.')
