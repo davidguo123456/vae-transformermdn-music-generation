@@ -43,7 +43,7 @@ class Encode_Song(beam.DoFn):
         """
         Loads the pre-trained model during setup.
         """
-        self.cutoff_time = 60 # ns longer than this will be shortened
+        self.cutoff_time = 400 # ns longer than this will be shortened
         self.minimum_time = 60 # minimum length for ns to be processed
         logging.info('Loading pre-trained model')
         self.model_config = config.MUSIC_VAE_CONFIG['melody-2-big']
@@ -248,7 +248,7 @@ def save_shard(contexts, targets, output_path):
 
     return contexts, targets
 
-def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=8, stride=1):
+def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=16, stride=1):
     print(train_input_path, test_input_path, output_path)
     train_files = glob.glob(os.path.expanduser(train_input_path))
     test_files = glob.glob(os.path.expanduser(test_input_path))
@@ -277,20 +277,8 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=8,
             song = song_embeddings[0]
             print(np.shape(song))
             # pad short sequences
-
-            #pad back
-            #pad_width = ((0, ctx_window + 1 - len(song)),) + ((0, 0),) * (song.ndim - 1)
-            #pad_width = tuple(tuple(max(0,x) for x in inner) for inner in pad_width)
-            #song = np.pad(song, pad_width, mode='constant')
-
-            #pad front
-            #context = song[:ctx_window]
-            #example_count += 1
-            #contexts.append(context)
-            #targets.append(song[ctx_window])
-
-            #adjusted embedding size
-            if len(song) >= 9:
+            if len(song) >= ctx_window + 1:
+                #adjusted embedding size
                 for i in range(0, len(song) - ctx_window, stride):
                     context = song[i:i + ctx_window]
                     example_count += 1

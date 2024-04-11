@@ -119,6 +119,7 @@ def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None,
 
 
 def sample_mdn(dataset, mode):
+    #use mode param to set where to load model from
     FLAGS(('',''))
 
     logging.info(FLAGS.flags_into_string())

@@ -109,14 +109,6 @@ def parallel_synth(song, i, ns_dir, audio_dir, image_dir, include_wav,
   ns_path = os.path.join(ns_dir, f'{i+1}.pkl')
   ns = song.play()
   song.download(audio_path)
-
-  #if include_plots:
-  #  fig = note_seq.plot_sequence(ns, show_figure=False)
-  #  export_png(fig, filename=plot_path)
-
-  #if include_wav:
-  #  synthesize_ns(audio_path, ns)
-
   data_utils.save(ns, ns_path)
   return ns
 
@@ -134,31 +126,13 @@ def sample_audio():
     log_dir = FLAGS.input
     real = data_utils.load(os.path.join(log_dir, 'real.pkl'))
     generated = data_utils.load(os.path.join(log_dir, 'generated.pkl'))
-    
-    #collection = data_utils.load(os.path.join(log_dir, 'collection.pkl'))
-    #idx = np.linspace(0, 40, 10).astype(np.int32)
-    #collection = collection[idx]
-
-
+  
     # Get baselines.
     print(np.shape(real))
-    start_emb = real[:, 0, :]
-    end_emb = real[:, 7, :]
-    idx = list(range(32))
     prior = np.random.randn(*generated.shape)
 
-    # Interpolation baseline.
-    #interp_baseline = [
-    #    song_utils.spherical_interpolation(start_emb, end_emb, alpha)
-    #    for alpha in np.linspace(0., 1., 16+2)
-    #]
-    #interp_baseline = np.stack(interp_baseline).transpose(1, 0, 2)
-    #start_real = real[:, idx[:7], :]
-    #end_real = real[:, idx[-7:], :]
-    #interp_baseline = np.concatenate((start_real, interp_baseline, end_real), axis=1)
-    #assert interp_baseline.shape == generated.shape
 
-    assert real.shape == generated.shape
+    #assert real.shape == generated.shape
     is_multi_bar = len(generated.shape) > 2
 
     logging.info('Decoding sequences.')

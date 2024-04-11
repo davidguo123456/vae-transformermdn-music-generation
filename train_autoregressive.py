@@ -44,29 +44,29 @@ flags.DEFINE_boolean('early_stopping', False,
                      'Use early stopping to prevent overfitting.')
 flags.DEFINE_float('grad_clip', 1., 'Max gradient norm for training.')
 flags.DEFINE_float('lr_gamma', 0.98, 'Gamma for learning rate scheduler.')
-flags.DEFINE_integer('lr_schedule_interval', 4000,
+flags.DEFINE_integer('lr_schedule_interval', 1000,
                      'Number of steps between LR changes.')
 flags.DEFINE_float('lr_warmup', 0, 'Learning rate warmup (epochs).')
 
 # Model
 flags.DEFINE_string('architecture', 'TransformerMDN',
                     'Class name of model architecture.')
-flags.DEFINE_integer('mdn_components', 50, 'Number of mixtures.')
-flags.DEFINE_integer('num_heads', 4, 'Number of attention heads.')
-flags.DEFINE_integer('num_layers', 4, 'Number of encoder layers.')
+flags.DEFINE_integer('mdn_components', 100, 'Number of mixtures.')
+flags.DEFINE_integer('num_heads', 8, 'Number of attention heads.')
+flags.DEFINE_integer('num_layers', 5, 'Number of encoder layers.')
 flags.DEFINE_integer('num_mlp_layers', 2, 'Number of output MLP layers.')
-flags.DEFINE_integer('mlp_dims', 1024, 'Number of channels per MLP layer.')
+flags.DEFINE_integer('mlp_dims', 2048, 'Number of channels per MLP layer.')
 
 # Data
-flags.DEFINE_list('data_shape', [8, 512], 'Shape of data.')
+flags.DEFINE_list('data_shape', [16, 512], 'Shape of data.')
 flags.DEFINE_string('pca_ckpt', '', 'PCA transform.')
-flags.DEFINE_string('slice_ckpt', '', 'Slice transform.')
+flags.DEFINE_string('slice_ckpt', './slice-mel-512.pkl', 'Slice transform.')
 flags.DEFINE_string('dim_weights_ckpt', '', 'Dimension scale transform.')
 flags.DEFINE_boolean('normalize', True, 'Normalize dataset to [-1, 1].')
 
 # Logging, checkpointing, and evaluation
 flags.DEFINE_integer('logging_freq', 100, 'Logging frequency.')
-flags.DEFINE_integer('snapshot_freq', 5000,
+flags.DEFINE_integer('snapshot_freq', 1500,
                      'Evaluation and checkpoint frequency.')
 flags.DEFINE_boolean('snapshot_sampling', True,
                      'Sample from score network during evaluation.')
@@ -196,7 +196,7 @@ def train_step(batch, optimizer, learning_rate):
     optimizer = optimizer.apply_gradient(grad, learning_rate=learning_rate)
     return optimizer, train_metrics
 
-def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=None, verbose=True, resume_training=True):
+def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=None, verbose=True, resume=True):
     """Training loop.
 
     Args:
@@ -232,7 +232,7 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
                         verbose=verbose)
     optimizer = create_optimizer(model, FLAGS.learning_rate)
     early_stop = train_utils.EarlyStopping(patience=1)
-    if resume_training:
+    if resume:
         optimizer, early_stop = checkpoints.restore_checkpoint(
             os.path.join( FLAGS.model_dir, mode), (optimizer, early_stop)
         )
@@ -249,10 +249,11 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
     for epoch in range(FLAGS.epochs):
         start_time = time.time()
         print("epoch: %s, started at: %s" % (epoch, start_time))
-        print(train_batches.reduce(0, lambda x,_: x+1).numpy())
+        steps_per_epoch = train_batches.reduce(0, lambda x,_: x+1).numpy()
+        print(steps_per_epoch)
         for step, batch in enumerate(tfds.as_numpy(train_batches)):
             print("step: %s" % (step))
-            global_step = step + epoch * train_batches.examples
+            global_step = step + epoch * steps_per_epoch
             optimizer, train_metrics = train_step(batch, optimizer,
                                                     lr_scheduler(global_step))
 
@@ -269,8 +270,7 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
                                         summary_writer=train_writer,
                                         verbose=verbose)
 
-            if (step % FLAGS.snapshot_freq == 0 and
-                step > 0) or step == train_batches.examples - 1:
+            if (global_step + 1) % min(steps_per_epoch * 4, FLAGS.snapshot_freq) == 0:
 
                 sampling_step += 1
 
@@ -287,6 +287,7 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
                     checkpoints.save_checkpoint(output_dir, (optimizer, early_stop),
                                                 sampling_step,
                                                 keep=FLAGS.checkpoints_to_keep)
+                    print("saved a checkpoint!")
 
                 if FLAGS.early_stopping and early_stop.should_stop:
                     logging.info('EARLY STOP: Ended training after %s epochs.', epoch + 1)
@@ -302,7 +303,7 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
 
     return optimizer
 
-def train_autoregressive(dataset, mode):
+def train_autoregressive(dataset, mode, resume=True):
     FLAGS(('',''))
     logging.info(FLAGS.flags_into_string())
     logging.info('Platform: %s', jax.lib.xla_bridge.get_backend().platform)
@@ -333,4 +334,5 @@ def train_autoregressive(dataset, mode):
             valid_batches=eval_ds,
             output_dir=FLAGS.model_dir,
             verbose=FLAGS.verbose,
-            mode=mode)
+            mode=mode,
+            resume=resume)
