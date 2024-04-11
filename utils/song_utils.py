@@ -21,7 +21,7 @@ import note_seq
 import numpy as np
 
 sys.path.append("{}/../".format(os.path.dirname(os.path.abspath(__file__))))
-from config import melody_2bar_converter
+from config.config import melody_2bar_converter
 
 
 def spherical_interpolation(p0, p1, alpha):

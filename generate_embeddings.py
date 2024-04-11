@@ -8,7 +8,7 @@ from magenta.models.music_vae import TrainedModel
 from magenta.models.music_vae import configs
 import numpy as np
 import tensorflow as tf
-import config
+import config.config as config
 import apache_beam as beam
 from apache_beam.metrics import Metrics
 import note_seq
@@ -49,7 +49,7 @@ class Encode_Song(beam.DoFn):
         self.model_config = config.MUSIC_VAE_CONFIG['melody-2-big']
         self.model = TrainedModel(self.model_config, 
                                   batch_size=1, 
-                                  checkpoint_dir_or_path=os.path.expanduser('~/ECE324/cat-mel_2bar_big.tar'))
+                                  checkpoint_dir_or_path=os.path.expanduser('~/ECE324/models/cat-mel_2bar_big.tar'))
     
     def process(self, ns):
         """
@@ -64,7 +64,6 @@ class Encode_Song(beam.DoFn):
         This method processes a single music sequence with length >= 60 and length < 300
         """
         print('Processing %s::%s (%f)' % (ns.id, ns.filename, ns.total_time))
-        print(ns.total_time)
         if ns.total_time < self.minimum_time:
             logging.info('Skipping notesequence with <1 minute duration.')
             Metrics.counter('EncodeSong', 'skipped_short_song').inc()
@@ -76,7 +75,6 @@ class Encode_Song(beam.DoFn):
 
         chunk_length = 2
         melodies = song_utils.extract_melodies(ns_trim)
-        print(np.shape(melodies))
         if not melodies:
             Metrics.counter('EncodeSong', 'extracted_no_melodies').inc()
             return
@@ -88,7 +86,6 @@ class Encode_Song(beam.DoFn):
         encoding_matrices = song_utils.encode_songs(self.model, songs)
 
         for matrix in encoding_matrices:
-            print(np.shape(matrix))
             assert matrix.shape[0] == 3 and matrix.shape[-1] == 512
             if matrix.shape[1] == 0:
                 Metrics.counter('EncodeSong', 'skipped_matrix').inc()
@@ -249,6 +246,23 @@ def save_shard(contexts, targets, output_path):
     return contexts, targets
 
 def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=16, stride=1):
+    """
+    Embed encoding of music sequences.
+
+    Args:
+        train_input_path (str): Path to the directory containing training music sequences.
+        test_input_path (str): Path to the directory containing test music sequences.
+        output_path (str): Path to write the embedded data.
+        ctx_window (int, optional): Context window size for encoding. Defaults to 16.
+        stride (int, optional): Stride size for encoding. Defaults to 1.
+
+    Returns:
+        None
+
+    This function embeds the encoding of music sequences located at `train_input_path` and `test_input_path` into TFRecord format 
+    and writes the embedded data to a TFRecord file specified by `output_path`. It extracts embeddings using a pre-trained model 
+    MusicVAE Model and pads short sequences to ensure they are of equal length.
+    """
     print(train_input_path, test_input_path, output_path)
     train_files = glob.glob(os.path.expanduser(train_input_path))
     test_files = glob.glob(os.path.expanduser(test_input_path))
@@ -262,6 +276,7 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=16
         test_files).map(lambda x: tf.py_function(
                 lambda binary: pickle.loads(binary.numpy()), [x], tensor_shape),
                             num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    
     for ds, split in [(train_dataset, 'train'), (test_dataset, 'test')]:
         print(split)
         output_fp = '{}/{}-{:04d}'
@@ -272,10 +287,8 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=16
         for song_data in ds.as_numpy_iterator():
             song_embeddings = song_data[0]
             assert song_embeddings.ndim == 3 and song_embeddings.shape[0] == 3
-
             # Use the full VAE embedding
             song = song_embeddings[0]
-            print(np.shape(song))
             # pad short sequences
             if len(song) >= ctx_window + 1:
                 #adjusted embedding size
@@ -285,7 +298,6 @@ def embed_encoding(train_input_path, test_input_path, output_path, ctx_window=16
                     contexts.append(context)
                     targets.append(song[i + ctx_window])
 
-            if example_count % 1000 == 0: print(example_count)
             if len(targets) > 2**17:
                 contexts, targets = save_shard(
                     contexts, targets, output_fp.format(output_path, split,

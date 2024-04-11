@@ -39,7 +39,7 @@ import utils.data_utils as data_utils
 import utils.song_utils as song_utils
 import utils.train_utils as train_utils
 import utils.metrics as metrics
-import config
+import config.config as config
 
 FLAGS = flags.FLAGS
 SYNTH = note_seq.fluidsynth
@@ -114,11 +114,19 @@ def parallel_synth(song, i, ns_dir, audio_dir, image_dir, include_wav,
 
 
 def sample_audio():
+    """
+    Generate audio files from samples using a pre-trained VAE model.
+
+    This function converts note_sequnce .pkl files to midi
+
+    Returns:
+        None
+    """
     FLAGS(('',''))
 
     # Get VAE model.
     model_config = config.MUSIC_VAE_CONFIG['melody-2-big']
-    ckpt = os.path.expanduser('~/ECE324/cat-mel_2bar_big.tar')
+    ckpt = os.path.expanduser('~/ECE324/models/cat-mel_2bar_big.tar')
     vae_model = TrainedModel(model_config,
                             batch_size=1,
                             checkpoint_dir_or_path=ckpt)
@@ -153,14 +161,11 @@ def sample_audio():
                             vae_model,
                             model_config.data_converter,
                             chunks_only=not is_multi_bar)
-      #assert len(sequences) == FLAGS.n_synth
 
       futures = [
           parallel_synth(song, i, ns_dir, audio_dir, image_dir,
                                 FLAGS.include_wav, FLAGS.include_plots)
           for i, song in enumerate(sequences)
       ]
-      #ns = ray.get(futures)
-      #eval_seqs[sample_split] = ns
 
       logging.info(f'Sythesized {sample_split} at {audio_dir}')

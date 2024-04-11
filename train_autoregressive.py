@@ -20,7 +20,7 @@ from flax.metrics import tensorboard
 from flax.training import checkpoints
 from flax.training import lr_schedule
 
-import input_pipeline
+import utils.input_pipeline as input_pipeline
 import utils.train_utils as train_utils
 import utils.data_utils as data_utils
 import models.model as ar
@@ -34,7 +34,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('seed', 0, 'Random seed for network initialization.')
 
 # Training
-flags.DEFINE_float('learning_rate', 3e-4, 'Learning rate for optimizer.')
+flags.DEFINE_float('learning_rate', 3e-5, 'Learning rate for optimizer.')
 flags.DEFINE_integer('batch_size', 32, 'Batch size for training.')
 flags.DEFINE_integer('epochs', 100, 'Number of training epochs.')
 flags.DEFINE_integer('max_steps', 100000, 'Maximum number of training steps.')
@@ -60,7 +60,7 @@ flags.DEFINE_integer('mlp_dims', 2048, 'Number of channels per MLP layer.')
 # Data
 flags.DEFINE_list('data_shape', [16, 512], 'Shape of data.')
 flags.DEFINE_string('pca_ckpt', '', 'PCA transform.')
-flags.DEFINE_string('slice_ckpt', './slice-mel-512.pkl', 'Slice transform.')
+flags.DEFINE_string('slice_ckpt', './models/slice-mel-512.pkl', 'Slice transform.')
 flags.DEFINE_string('dim_weights_ckpt', '', 'Dimension scale transform.')
 flags.DEFINE_boolean('normalize', True, 'Normalize dataset to [-1, 1].')
 
@@ -196,7 +196,7 @@ def train_step(batch, optimizer, learning_rate):
     optimizer = optimizer.apply_gradient(grad, learning_rate=learning_rate)
     return optimizer, train_metrics
 
-def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=None, verbose=True, resume=True):
+def train(train_batches, valid_batches, ckpt_dir='saved_checkpoints', output_dir=None, verbose=True, resume=True):
     """Training loop.
 
     Args:
@@ -234,7 +234,7 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
     early_stop = train_utils.EarlyStopping(patience=1)
     if resume:
         optimizer, early_stop = checkpoints.restore_checkpoint(
-            os.path.join( FLAGS.model_dir, mode), (optimizer, early_stop)
+            os.path.join( FLAGS.model_dir, ckpt_dir), (optimizer, early_stop)
         )
 
     # Learning rate schedule
@@ -303,7 +303,18 @@ def train(train_batches, valid_batches, mode='saved_checkpoints', output_dir=Non
 
     return optimizer
 
-def train_autoregressive(dataset, mode, resume=True):
+def train_autoregressive(dataset, ckpt_dir, resume=True):
+    """
+    Train an autoregressive model using the specified dataset.
+
+    Args:
+        dataset: The dataset to be used for training.
+        ckpt_dir: The directory to store checkpoints, logs, and samples.
+        resume: Whether to resume training from the latest checkpoint or start from scratch.
+
+    Returns:
+        None
+    """
     FLAGS(('',''))
     logging.info(FLAGS.flags_into_string())
     logging.info('Platform: %s', jax.lib.xla_bridge.get_backend().platform)
@@ -334,5 +345,5 @@ def train_autoregressive(dataset, mode, resume=True):
             valid_batches=eval_ds,
             output_dir=FLAGS.model_dir,
             verbose=FLAGS.verbose,
-            mode=mode,
+            ckpt_dir=ckpt_dir,
             resume=resume)

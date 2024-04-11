@@ -36,7 +36,7 @@ import utils.train_utils as train_utils
 import utils.losses as losses
 import utils.metrics as metrics
 import train_autoregressive
-import input_pipeline
+import utils.input_pipeline as input_pipeline
 
 from tensorflow_probability.substrates import jax as tfp
 
@@ -50,17 +50,19 @@ flags.DEFINE_string("sampling_dir", "sample", "Sampling directory.")
 flags.DEFINE_integer("sample_size", 100, "Number of samples.")
 flags.DEFINE_boolean("flush", True, "Flush generated samples to disk.")
 
-def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None, mode='saved_checkpoints'):
-    """Generate samples using autoregressive decoding.
+def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None, ckpt_dir='saved_checkpoints'):
+    """
+    Generate samples using autoregressive decoding.
 
     Args:
-      num_samples: The number of samples to generate.
-      steps: Number of sampling steps.
-      embedding_dims: Number of dimensions per embedding.
-      rng_seed: Initialization seed.
+        num_samples: The number of samples to generate.
+        steps: Number of sampling steps.
+        embedding_dims: Number of dimensions per embedding.
+        rng_seed: Initialization seed.
+        ckpt_dir: checkpoint directory under 'FLAGS.model_dir'
 
     Returns:
-      generated: An array of generated samples.
+        generated: An array of generated samples.
     """
     rng = jax.random.PRNGKey(rng_seed)
     rng, model_rng = jax.random.split(rng)
@@ -81,7 +83,7 @@ def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None,
 
     # Load learned parameters
     optimizer, early_stop = checkpoints.restore_checkpoint(
-        os.path.join( FLAGS.model_dir, mode), (optimizer, early_stop)
+        os.path.join( FLAGS.model_dir, ckpt_dir), (optimizer, early_stop)
     )
 
     # Autoregressive decoding
@@ -118,8 +120,19 @@ def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None,
     return tokens
 
 
-def sample_mdn(dataset, mode):
-    #use mode param to set where to load model from
+def sample_mdn(dataset, ckpt_dir):
+    """
+    Sample from trained autoregressive MDN.
+
+    This function samples from the trained TransformerMDN model. 
+
+    Args:
+        dataset (str): The name of the dataset used for sampling.
+        ckpt_dir (str): The checkpoint directory containing the trained model parameters.
+
+    Returns:
+        None
+    """
     FLAGS(('',''))
 
     logging.info(FLAGS.flags_into_string())
@@ -163,7 +176,7 @@ def sample_mdn(dataset, mode):
     shape = real[0].shape
 
     # Generate samples
-    generated = sample(FLAGS.sample_size, shape[-2], shape[-1], FLAGS.sample_seed, real, mode=mode)
+    generated = sample(FLAGS.sample_size, shape[-2], shape[-1], FLAGS.sample_seed, real, ckpt_dir)
 
     # Dump generated to CPU.
     generated = np.array(generated)
