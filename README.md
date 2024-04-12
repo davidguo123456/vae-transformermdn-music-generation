@@ -1,5 +1,5 @@
 # Music Generation Using Autoencoders and Transformer Mixture Distribution Models
-Prepared for ECE324H1-S. Companion write-up can be found in 'FILE NAEM OF THE PROJ HERE DONT FORGET'
+Prepared for ECE324H1-S. Companion project report can be found in 'FILE NAME OF THE PROJ HERE DONT FORGET'
 
 ## Installation
 All code is written in Python 3. Development was done on WSL2 in Ubuntu 20.04.
@@ -116,6 +116,8 @@ Note that 'checkpoint_#' is a placeholder, and anything will work as long as the
 
 After training, place the desired checkpoint to generate off of in './save/mdn/checkpoint_#' with the same setup as in training. 
 
-Run 'generation.ipynb' to generate results and audio samples. Samples are saved to './audio'. 
+Run 'results.ipynb' to generate results and audio samples. Samples are saved to './audio'. 
+
+**Note: alteratively, since running the results notebook is time-consuming (and requires proper set up of the environment), to listen to the generated samples directly, open the MIDI files located in './audio/gen/audio'. The random and testing MIDI samples are located in './audio/prior/audio' and './audio/real/audio' respectively, if you wish to compare.**
 
 
