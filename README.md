@@ -104,7 +104,7 @@ To start, download [Lakh MIDI Dataset](https://colinraffel.com/projects/lmd/) an
 
 Download the MusicVAE checkpoint 'cat-mel_2bar_big' [here](https://storage.googleapis.com/magentadata/models/music_vae/checkpoints/cat-mel_2bar_big.tar).
 
-In 'data_processing.ipynb' follow all steps sequentially for both datasets (thus denoted as 'lmd_wan' and 'classical_midi_split'), replacing all file paths as needed. Note that it is not recommended to process or train on the full Lahk MIDI dataset as it is very large and will multiple days on lower end systems.
+In 'data_processing.ipynb' follow all steps sequentially for both datasets (thus denoted as 'lmd_wan' and 'classical_midi_split'), replacing all file paths as needed. Note that it is not recommended to process or train on the full Lahk MIDI dataset as it is very large and will take multiple days on lower end systems.
 
 ## Training
 
