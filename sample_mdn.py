@@ -120,7 +120,7 @@ def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None,
     return tokens
 
 
-def sample_mdn(dataset, ckpt_dir):
+def sample_mdn(dataset, ckpt_dir, flush=True):
     """
     Sample from trained autoregressive MDN.
 
@@ -129,6 +129,7 @@ def sample_mdn(dataset, ckpt_dir):
     Args:
         dataset (str): The name of the dataset used for sampling.
         ckpt_dir (str): The checkpoint directory containing the trained model parameters.
+        flush (bool): Whether or not to undo normalization and write embeddings to disk. 
 
     Returns:
         None
@@ -181,8 +182,12 @@ def sample_mdn(dataset, ckpt_dir):
     # Dump generated to CPU.
     generated = np.array(generated)
 
+    # Generate random baseline, dump to CPU
+    #print("shape of sample:", generated.shape)
+    #prior = np.random.randn(*generated.shape)
+
     # Write samples to disk (used for listening).
-    if FLAGS.flush:
+    if flush:
         # Inverse transform data back to listenable/unnormalized latent space.
         generated_t = input_pipeline.inverse_data_transform(
             generated,
@@ -196,6 +201,21 @@ def sample_mdn(dataset, ckpt_dir):
         real_t = input_pipeline.inverse_data_transform(
             real, FLAGS.normalize, pca, eval_min, eval_max, slice_idx, dim_weights
         )
+
+        #To make it consistent, inverse transform the randomly generated sample as well
+        #sample naturally generates 1 max, 0 min
+        #prior_t = input_pipeline.inverse_data_transform(
+        #    prior,
+        #    FLAGS.normalize,
+        #    pca,
+        #    0,
+        #    1,
+        #    slice_idx,
+        #    dim_weights)
+
+        #data_utils.save(prior_t, os.path.join(log_dir, "mdn/prior.pkl"))
         data_utils.save(real_t, os.path.join(log_dir, "mdn/real.pkl"))
         data_utils.save(generated_t, os.path.join(log_dir, "mdn/generated.pkl"))
+    else:
+        return real, generated 
 

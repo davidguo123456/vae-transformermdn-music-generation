@@ -79,6 +79,9 @@ pip install -U aiohttp==3.6.2
 pip install -U redis==3.5.3
 pip install -U aiohttp-cors==0.7.0
 pip install -U aioredis===1.3.1
+pip install pretty-midi
+pip install pyfluidsynth
+pip install pypianoroll
 
 #check tensorflow install, this should show your GPU(s)
 python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"

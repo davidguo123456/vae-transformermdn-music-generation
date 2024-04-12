@@ -161,12 +161,12 @@ def var_note_duration(ns, hop_size=1, frame_size=1):
 def perceptual_midi_histograms(ns, interval=1):
   """Generates histograms for each MIDI feature."""
   return dict(
-      nd=note_density(ns, interval=interval),
-      pr=pitch_range(ns, interval=interval),
-      mp=mean_pitch(ns, interval=interval),
-      vp=var_pitch(ns, interval=interval),
-      md=mean_note_duration(ns, interval=interval),
-      vd=var_note_duration(ns, interval=interval),
+      nd=note_density(ns, 2, 4),
+      pr=pitch_range(ns, 2, 4),
+      mp=mean_pitch(ns, 2, 4),
+      vp=var_pitch(ns, 2, 4),
+      md=mean_note_duration(ns, 2, 4),
+      vd=var_note_duration(ns, 2, 4),
   )
 
 
