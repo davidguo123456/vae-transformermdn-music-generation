@@ -50,7 +50,7 @@ flags.DEFINE_string("sampling_dir", "sample", "Sampling directory.")
 flags.DEFINE_integer("sample_size", 100, "Number of samples.")
 flags.DEFINE_boolean("flush", True, "Flush generated samples to disk.")
 
-def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None, ckpt_dir='saved_checkpoints'):
+def sample(num_samples=2400, steps=32, embedding_dims=42, rng_seed=1, real=None, ckpt_dir='checkpoints'):
     """
     Generate samples using autoregressive decoding.
 

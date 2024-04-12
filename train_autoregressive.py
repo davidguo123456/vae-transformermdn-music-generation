@@ -196,7 +196,7 @@ def train_step(batch, optimizer, learning_rate):
     optimizer = optimizer.apply_gradient(grad, learning_rate=learning_rate)
     return optimizer, train_metrics
 
-def train(train_batches, valid_batches, ckpt_dir='saved_checkpoints', output_dir=None, verbose=True, resume=True):
+def train(train_batches, valid_batches, ckpt_dir='checkpoints', output_dir=None, verbose=True, resume=True):
     """Training loop.
 
     Args:
