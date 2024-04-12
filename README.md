@@ -107,7 +107,10 @@ In 'data_processing.ipynb' follow all steps sequentially for both datasets (thus
 ## Training
 
 Run 'training.ipynb'; hyperparameters, training settings, checkpoint frequency, epoch number and similar settigns can be configured via flags in 'train_autoregressive.py'
-To resume training, save the checkpoint to resume from in './save/mdn/checkpoint_#', set 'resume' to 'True' and set 'ckpt_dir' to 'checkpoint_#'. Note that 'checkpoint_#' is a placeholder, and anything will work as long as the checkpoint is in the correct folder under './save/mdn/' and the name of that folder is passed via 'ckpt_dir' 
+
+To resume training, save the checkpoint to resume from in './save/mdn/checkpoint_#', set 'resume' to 'True' and set 'ckpt_dir' to 'checkpoint_#'. 
+
+Note that 'checkpoint_#' is a placeholder, and anything will work as long as the checkpoint is in the correct folder under './save/mdn/' and the name of that folder is passed via 'ckpt_dir' 
 
 ## Generation
 
