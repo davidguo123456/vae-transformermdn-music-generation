@@ -1,7 +1,7 @@
 # Music Generation Using Autoencoders and Transformer Mixture Distribution Models
 Prepared for ECE324H1-S. Companion project report can be found in 'Music_Generation_Using_Autoencoders_and_Transformer_Mixture_Distribution_Models.pdf'
 
-Authors: Kevin Gao 1007638790, Yina Gao 1008084485, David Guo 1007677275
+Authors: Kevin Chen 1007638790, Yina Gao 1008084485, David Guo 1007677275
 
 ## Installation
 All code is written in Python 3. Development was done on WSL2 in Ubuntu 20.04.
