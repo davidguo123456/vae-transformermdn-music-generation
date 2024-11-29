@@ -1,5 +1,5 @@
 # Music Generation Using Autoencoders and Transformer Mixture Distribution Models
-Prepared for ECE324H1-S. Companion project report can be found in 'Music_Generation_Using_Autoencoders_and_Transformer_Mixture_Distribution_Models.pdf'
+Companion project report can be found in 'Music_Generation_Using_Autoencoders_and_Transformer_Mixture_Distribution_Models.pdf'
 
 Authors: Kevin Chen 1007638790, Yina Gao 1008084485, David Guo 1007677275
 
